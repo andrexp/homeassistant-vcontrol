@@ -3,7 +3,7 @@ name: Vcontrol add-on
 version: "1.12.6"
 slug: vcontrold
 description: Vcontrol add-on
-url: "https://github.com/Alexandre-io/homeassistant-vcontrol"
+url: "https://github.com/andrexp/homeassistant-vcontrol"
 arch:
   - armhf
   - armv7
