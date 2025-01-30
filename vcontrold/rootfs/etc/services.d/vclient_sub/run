@@ -29,7 +29,7 @@ while true ; do
             command=$(echo $topic | cut -d'/' -f2)
             bashio::log.info "Sending command: [${command}]: ${value}"
             vclient -h $VCONTROL_HOST -p $VCONTROL_PORT -o /dev/stdout -c "${command} ${value}"
-            if [ "x$E1" != x ]; then
+            if [ "x$E1" != xOK ]; then
                 echo "Es ist ein Fehler aufgetreten $E1"
             fi
         fi
