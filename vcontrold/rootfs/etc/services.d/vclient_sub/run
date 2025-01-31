@@ -19,23 +19,23 @@ fi
 bashio::log.info "Starting MQTT subscription to topic: $MQTT_TOPIC/#"
 
 ## Run your program
-while true ; do
-    mosquitto_sub -v -h $MQTT_HOST -p $MQTT_PORT -u $MQTT_USER -P $MQTT_PASSWORD -t "$MQTT_TOPIC/#" | while read -r payload
-    do
-        # Here is the callback to execute whenever you receive a message:
-        topic=$(echo $payload | cut -d' ' -f1)
-        value=$(echo $payload | cut -d' ' -f2)
-        if [[ $topic =~ "/set" ]]; then
-            command=$(echo $topic | cut -d'/' -f2)
-            bashio::log.info "Sending command: [${command}]: ${value}"
-            vclient -h $VCONTROL_HOST -p $VCONTROL_PORT -o /dev/stdout -c "${command} ${value}"
-            if [ "x$E1" != xOK ]; then
-                echo "Es ist ein Fehler aufgetreten $E1"
-            fi
-        fi
-    done
-    sleep $REFRESH_RATE
-done
+#while true ; do
+#    mosquitto_sub -v -h $MQTT_HOST -p $MQTT_PORT -u $MQTT_USER -P $MQTT_PASSWORD -t "$MQTT_TOPIC/#" | while read -r payload
+#    do
+#        # Here is the callback to execute whenever you receive a message:
+#        topic=$(echo $payload | cut -d' ' -f1)
+#        value=$(echo $payload | cut -d' ' -f2)
+#        if [[ $topic =~ "/set" ]]; then
+#            command=$(echo $topic | cut -d'/' -f2)
+#            bashio::log.info "Sending command: [${command}]: ${value}"
+#            vclient -h $VCONTROL_HOST -p $VCONTROL_PORT -o /dev/stdout -c "${command} ${value}"
+#            if [ "$?" != xOK ]; then
+#            echo "Es ist ein Fehler aufgetreten $?"
+##            fi
+#        fi
+#    done
+#    sleep $REFRESH_RATE
+#done
 
 # Main loop
 while true; do
@@ -50,11 +50,19 @@ while true; do
             bashio::log.info "Received command: [${command}] with value: ${value}"
 
             # Send command to vclient
-            if vclient -h "$VCONTROL_HOST" -p "$VCONTROL_PORT" -o /dev/stdout -c "${command} ${value}"; then
-                bashio::log.info "Command [${command}] executed successfully."
-            else
-                bashio::log.error "Failed to execute command [${command}] with value: ${value}"
-            fi
+            count=0
+            while [ $count -lt 5 ]
+            do 
+                vclient -h "$VCONTROL_HOST" -p "$VCONTROL_PORT" -o ./return -c "${command} ${value}"
+                if cat return | grep "OK"; then 
+                    bashio::log.info "Command [${command}] executed successfully."
+                    break
+                else
+                    bashio::log.error "Failed to execute command [${command}] with value: ${value}. Retrying... (${count})"
+                    count=$(( $count + 1 ))
+                    sleep 1
+                fi
+            done
         fi
     done
     bashio::log.info "Sleeping for $REFRESH_RATE seconds before restarting subscription."
